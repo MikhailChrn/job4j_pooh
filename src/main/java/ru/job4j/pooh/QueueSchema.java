@@ -1,11 +1,18 @@
 package ru.job4j.pooh;
 
+import java.util.Iterator;
 import java.util.concurrent.*;
 
 public class QueueSchema implements Schema {
-    private final ConcurrentHashMap<String, CopyOnWriteArrayList<Receiver>> receivers = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, BlockingQueue<String>> data = new ConcurrentHashMap<>();
-    private final Condition condition = new Condition();
+
+    private final ConcurrentHashMap<String, CopyOnWriteArrayList<Receiver>> receivers
+            = new ConcurrentHashMap<>();
+
+    private final ConcurrentHashMap<String, BlockingQueue<String>> data
+            = new ConcurrentHashMap<>();
+
+    private final Condition condition
+            = new Condition();
 
     @Override
     public void addReceiver(Receiver receiver) {
@@ -24,12 +31,16 @@ public class QueueSchema implements Schema {
     @Override
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
-            for (var queueKey : receivers.keySet()) {
-                var queue = data.getOrDefault(queueKey, new LinkedBlockingQueue<>());
-                var receiversByQueue = receivers.get(queueKey);
-                var it = receiversByQueue.iterator();
+            for (String queueKey : receivers.keySet()) {
+                BlockingQueue<String> queue
+                        = data.getOrDefault(queueKey, new LinkedBlockingQueue<>());
+                CopyOnWriteArrayList<Receiver> receiversByQueue
+                        = receivers.get(queueKey);
+                Iterator<Receiver> it
+                        = receiversByQueue.iterator();
+
                 while (it.hasNext()) {
-                    var data = queue.poll();
+                    String data = queue.poll();
                     if (data != null) {
                         it.next().receive(data);
                     }
@@ -41,7 +52,9 @@ public class QueueSchema implements Schema {
                     }
                 }
             }
+
             condition.off();
+
             try {
                 condition.await();
             } catch (InterruptedException e) {
