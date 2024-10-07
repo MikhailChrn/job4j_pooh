@@ -47,7 +47,6 @@ public class TopicSchema implements Schema {
             }
 
             condition.off();
-
             try {
                 condition.await();
             } catch (InterruptedException e) {
